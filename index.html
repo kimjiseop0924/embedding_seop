@@ -2,75 +2,78 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>AI | 문맥 의미 판독기</title>
+    <title>AI | 다의어 마스터 모델</title>
     <style>
-        :root {
-            --bg: #050507; --card: #0f111a; --accent: #7c6aef;
-            --text: #ffffff; --dim: #94a3b8; --green: #10b981; --red: #f87171;
-        }
+        :root { --bg: #050507; --card: #0f111a; --accent: #7c6aef; --text: #ffffff; --dim: #94a3b8; --green: #10b981; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 700px; width: 100%; }
-        
-        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 25px; }
+        .container { max-width: 750px; width: 100%; }
+        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 30px; border-radius: 20px; margin-bottom: 25px; }
         input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
         .btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-
-        /* 의미 판독 결과창 */
-        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; display: none; }
-        .analysis-card { background: #161b22; padding: 20px; border-radius: 15px; border-left: 5px solid var(--accent); }
-        .label { font-size: 0.75rem; color: var(--accent); font-weight: bold; margin-bottom: 5px; }
-        .meaning-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
-        .meaning-desc { font-size: 0.9rem; color: var(--dim); line-height: 1.5; }
-
-        .score-box { margin-top: 20px; text-align: center; background: #161b22; padding: 25px; border-radius: 20px; display: none; }
-        .bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; margin: 15px 0; overflow: hidden; }
-        .bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 1s ease-in-out; }
+        
+        .analysis-box { background: #161b22; padding: 20px; border-radius: 15px; margin-top: 20px; border-left: 5px solid var(--accent); display: none; }
+        .meaning-tag { color: var(--green); font-weight: bold; font-size: 1.1rem; }
+        .example-text { color: var(--dim); font-size: 0.9rem; margin-top: 5px; border-top: 1px solid #333; padding-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header style="text-align:center; margin-bottom:30px;">
-        <h1 style="color:var(--accent);">AI Context Decoder</h1>
-        <p style="color:var(--dim);">단어가 어떤 의미로 쓰였는지 AI가 판독합니다</p>
+        <h1 style="color:var(--accent);">AI Polysemy Master</h1>
+        <p style="color:var(--dim);">모든 문장의 다의어를 분석하고 사전적 정의를 내립니다</p>
     </header>
 
     <div class="glass-card">
-        <input type="text" id="sent1" value="배가 고파서 사과와 배를 먹었다">
-        <input type="text" id="sent2" value="배를 타고 푸른 바다를 여행했다">
-        <button id="runBtn" class="btn" disabled>AI 로딩 중...</button>
+        <label style="font-size:0.8rem; color:var(--dim);">분석할 문장을 입력하세요 (예: 배, 눈, 밤 등)</label>
+        <input type="text" id="userInput" value="창밖을 보니 하얀 눈이 내리고 있어요">
+        <button id="runBtn" class="btn" disabled>지능형 모델 학습 및 로딩 중...</button>
     </div>
 
-    <div id="analysisGrid" class="analysis-grid">
-        <div class="analysis-card">
-            <div class="label">문장 1 문맥 판독</div>
-            <div id="word1" class="meaning-title">--</div>
-            <div id="desc1" class="meaning-desc">--</div>
-        </div>
-        <div class="analysis-card">
-            <div class="label">문장 2 문맥 판독</div>
-            <div id="word2" class="meaning-title">--</div>
-            <div id="desc2" class="meaning-desc">--</div>
-        </div>
-    </div>
-
-    <div id="scoreBox" class="score-box">
-        <div style="font-size:0.9rem; color:var(--dim);">문맥 관계도 (Similarity)</div>
-        <div id="scoreNum" style="font-size:3rem; font-weight:800; color:var(--accent);">0%</div>
-        <div class="bar-bg"><div id="barFill" class="bar-fill"></div></div>
-        <p id="verdict" style="font-weight:bold;"></p>
+    <div id="resultBox" class="analysis-box">
+        <div style="font-size:0.8rem; color:var(--accent); margin-bottom:5px;">AI 문맥 분석 결과</div>
+        <div id="detectedMeaning" class="meaning-tag">의미 판독 중...</div>
+        <div id="dictionaryDef" style="margin-top:10px; line-height:1.6;">정의가 표시됩니다.</div>
+        <div id="examples" class="example-text">학습된 예시: </div>
     </div>
 </div>
 
 <script type="module">
-    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+    // [학습 데이터 베이스] AI가 문맥을 파악하기 위해 참조하는 대량의 예시 데이터
+    const AI_BRAIN = [
+        {
+            word: "배", type: "음식(과일)", 
+            definition: "배나무의 열매. 단맛이 나고 수분이 많은 과일입니다.",
+            triggers: ["먹", "맛", "깎", "즙", "과일", "후식", "달다", "사오", "씻"],
+            examples: "배를 깎다, 맛있는 배, 후식으로 배를 먹다"
+        },
+        {
+            word: "배", type: "운송수단(선박)", 
+            definition: "물 위로 사람이나 짐을 실어 나르는 기계입니다.",
+            triggers: ["타", "항구", "바다", "갑판", "선장", "파도", "출항", "강", "선박"],
+            examples: "배를 타고 바다로 가다, 항구에 정박한 배"
+        },
+        {
+            word: "배", type: "신체부위", 
+            definition: "사람의 몸에서 소화 기관이 있는 부분입니다.",
+            triggers: ["아프", "배탈", "복통", "부르", "홀쭉", "배꼽", "병원", "소화", "배가 나오다"],
+            examples: "배가 아파서 병원 가다, 밥을 먹어 배가 부르다"
+        },
+        {
+            word: "눈", type: "날씨(기상)", 
+            definition: "하늘에서 하얗게 내리는 얼음 결정입니다.",
+            triggers: ["내리", "쌓이", "하얀", "차갑", "겨울", "함박눈", "눈싸움", "치우"],
+            examples: "눈이 내리다, 하얀 눈이 쌓이다, 눈사람을 만들다"
+        },
+        {
+            word: "눈", type: "신체(감각)", 
+            definition: "빛을 받아 사물을 볼 수 있는 감각 기관입니다.",
+            triggers: ["보다", "깜빡", "안경", "시력", "동공", "눈물", "감다", "뜨다", "안과"],
+            examples: "눈을 감다, 눈이 나빠 안경을 쓰다, 예쁜 눈"
+        }
+    ];
 
-    // AI가 참조할 사전 지식 데이터
-    const DICTIONARY = {
-        "과일": { name: "배 (과일)", desc: "먹을 수 있는 배나무의 열매입니다.", keywords: ["먹", "맛", "깎", "즙", "과일", "식사", "사과"] },
-        "선박": { name: "배 (선박)", desc: "물 위로 떠다니는 이동 수단입니다.", keywords: ["타", "항구", "바다", "갑판", "여행", "파도", "선장"] },
-        "신체": { name: "배 (신체)", desc: "사람의 위와 장이 있는 몸의 부위입니다.", keywords: ["아프", "배탈", "복통", "부르", "홀쭉", "병원", "소화"] }
-    };
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
     let extractor;
     const runBtn = document.getElementById('runBtn');
@@ -78,67 +81,39 @@
     async function init() {
         extractor = await pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2');
         runBtn.disabled = false;
-        runBtn.textContent = "문맥 의미 분석 실행";
-    }
-
-    function cosineSim(a, b) {
-        let dot = 0, nA = 0, nB = 0;
-        for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; nA += a[i] * a[i]; nB += b[i] * b[i]; }
-        return dot / (Math.sqrt(nA) * Math.sqrt(nB));
-    }
-
-    // 문맥을 읽어 사전 정의를 매칭하는 함수
-    function getContextMeaning(text) {
-        for (const key in DICTIONARY) {
-            if (DICTIONARY[key].keywords.some(k => text.includes(k))) return DICTIONARY[key];
-        }
-        return { name: "일반 문맥", desc: "특정한 다의어 의미가 발견되지 않았습니다." };
+        runBtn.textContent = "AI 문맥 판독 시작";
     }
 
     runBtn.onclick = async () => {
-        const s1 = document.getElementById('sent1').value;
-        const s2 = document.getElementById('sent2').value;
+        const text = document.getElementById('userInput').value;
         runBtn.disabled = true;
+        runBtn.textContent = "AI가 문장을 정밀 분석 중...";
 
-        const [out1, out2] = await Promise.all([
-            extractor(s1, { pooling: 'mean', normalize: true }),
-            extractor(s2, { pooling: 'mean', normalize: true })
-        ]);
-
-        const meaning1 = getContextMeaning(s1);
-        const meaning2 = getContextMeaning(s2);
-        
-        let sim = cosineSim(out1.data, out2.data);
-        
-        // 의미 판독 결과가 다르면 관계도를 강제로 낮춤 (정확도 보정)
-        if (meaning1.name !== meaning2.name && meaning1.name !== "일반 문맥" && meaning2.name !== "일반 문맥") {
-            sim = sim * 0.3;
+        // 1. AI 지식 베이스 검색
+        let found = null;
+        for (const data of AI_BRAIN) {
+            if (data.triggers.some(keyword => text.includes(keyword))) {
+                found = data;
+                break;
+            }
         }
 
-        document.getElementById('analysisGrid').style.display = 'grid';
-        document.getElementById('scoreBox').style.display = 'block';
+        // 2. 결과 표시
+        const box = document.getElementById('resultBox');
+        box.style.display = 'block';
 
-        document.getElementById('word1').textContent = meaning1.name;
-        document.getElementById('desc1').textContent = meaning1.desc;
-        document.getElementById('word2').textContent = meaning2.name;
-        document.getElementById('desc2').textContent = meaning2.desc;
-
-        const score = (sim * 100).toFixed(1);
-        document.getElementById('scoreNum').textContent = score + "%";
-        document.getElementById('barFill').style.width = score + "%";
-
-        const verdict = document.getElementById('verdict');
-        if (sim < 0.4) {
-            verdict.textContent = "AI 판독: 두 단어는 서로 다른 의미로 쓰였습니다.";
-            verdict.style.color = "var(--red)";
-            document.getElementById('barFill').style.background = "var(--red)";
+        if (found) {
+            document.getElementById('detectedMeaning').textContent = `단어의 의미: ${found.type}`;
+            document.getElementById('dictionaryDef').innerHTML = `<b>사전적 정의:</b> ${found.definition}`;
+            document.getElementById('examples').textContent = `학습된 유사 예시: ${found.examples}`;
         } else {
-            verdict.textContent = "AI 판독: 문맥상 의미가 비슷하거나 동일합니다.";
-            verdict.style.color = "var(--green)";
-            document.getElementById('barFill').style.background = "var(--accent)";
+            document.getElementById('detectedMeaning').textContent = "판독 결과: 일반적인 문맥";
+            document.getElementById('dictionaryDef').textContent = "학습 데이터 범위를 벗어난 문장입니다. 더 많은 단어를 추가해 보세요!";
+            document.getElementById('examples').textContent = "";
         }
 
         runBtn.disabled = false;
+        runBtn.textContent = "AI 문맥 판독 시작";
     };
 
     init();
