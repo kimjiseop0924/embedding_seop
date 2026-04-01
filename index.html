@@ -2,32 +2,174 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>지섭의 AI 문맥 분석기</title>
+    <title>JISEOP AI Lab | Context Analyzer</title>
     <style>
-        :root { --bg: #0a0a0c; --surface: #131318; --accent: #7c6aef; --text: #e8e6f0; --green: #50d080; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 600px; width: 100%; }
-        #loadingContainer { width: 100%; background: #1e1e26; height: 10px; border-radius: 5px; margin: 20px 0; display: block; overflow: hidden; }
-        #loadingBar { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
-        
-        .input-group { background: var(--surface); padding: 20px; border-radius: 15px; border: 1px solid #1e1e26; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn:disabled { background: #333; cursor: not-allowed; }
+        :root {
+            --bg: #050507;
+            --card-bg: #0f111a;
+            --accent: #7c6aef;
+            --accent-glow: rgba(124, 106, 239, 0.3);
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --green: #10b981;
+            --border: #1e293b;
+        }
 
-        .model-card { background: var(--surface); border: 1px solid #1e1e26; padding: 15px; border-radius: 12px; margin-top: 15px; }
-        .bar-bg { width: 100%; height: 8px; background: #1e1e26; border-radius: 4px; margin-top: 10px; }
-        .bar-fill { height: 100%; width: 0%; background: var(--green); transition: width 0.8s; }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            margin: 0;
+        }
+
+        .container { max-width: 700px; width: 100%; }
+
+        /* 헤더 디자인 */
+        header { text-align: center; margin-bottom: 40px; }
+        .logo { font-size: 0.9rem; color: var(--accent); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        h1 { font-size: 2.5rem; font-weight: 800; margin: 0; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* 입력창 디자인 */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            margin-bottom: 24px;
+        }
+
+        .input-wrapper { margin-bottom: 20px; }
+        label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; margin-left: 4px; }
+        input {
+            width: 100%; background: #050507; border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 18px; color: white; font-size: 1rem;
+            transition: all 0.3s; box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+
+        /* 버튼 디자인 */
+        .btn-primary {
+            width: 100%; padding: 16px; background: var(--accent); color: white;
+            border: none; border-radius: 12px; font-weight: 700; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); }
+        .btn-primary:disabled { background: #2d2d3d; color: #666; cursor: not-allowed; }
+
+        /* 결과 그래프 및 분석 창 */
+        .result-section { display: none; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .score-card {
+            background: rgba(124, 106, 239, 0.05); border: 1px solid var(--accent);
+            border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px;
+        }
+        .score-num { font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1; margin: 10px 0; }
+        
+        .progress-container { width: 100%; height: 12px; background: #1e1e26; border-radius: 6px; overflow: hidden; margin: 20px 0; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #a78bfa); transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        .analysis-text { background: #161b22; padding: 20px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; border: 1px solid #30363d; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>AI 문맥 & 관계도 분석</h2>
-    
-    <div id="loadingStatus">인공지능 모델을 내려받는 중입니다... (약 30초 소요)</div>
-    <div id="loadingContainer"><div id="loadingBar"></div></div>
+    <header>
+        <div class="logo">Artificial Intelligence</div>
+        <h1>Context Analyzer</h1>
+    </header>
 
-    <div class="input-group">
-        <input type="text" id="sent1" value="배가 고파서 사과를 먹었다">
-        <input type="text" id="sent2" value="배를 타고 바다를 건너갔다">
+    <div class="glass-card">
+        <div class="input-wrapper">
+            <label>Sentence 01</label>
+            <input type="text" id="sent1" value="맛있는 배를 먹으니 기분이 좋아">
+        </div>
+        <div class="input-wrapper">
+            <label>Sentence 02</label>
+            <input type="text" id="sent2" value="배를 타고 푸른 바다를 건너가">
+        </div>
+        <button id="runBtn" class="btn-primary" disabled>로딩 중...</button>
+    </div>
+
+    <div id="resultSection" class="result-section">
+        <div class="score-card">
+            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-dim);">의미 관계도 (Similarity)</div>
+            <div id="scoreNum" class="score-num">0%</div>
+            <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+
+        <div class="analysis-text">
+            <div id="statusTag" style="font-weight: 700; margin-bottom: 8px;">분석 완료</div>
+            <div id="descText" style="color: var(--text-dim);">문장을 입력하고 분석 버튼을 눌러주세요.</div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+    let extractor;
+    const runBtn = document.getElementById('runBtn');
+
+    async function init() {
+        try {
+            extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            runBtn.disabled = false;
+            runBtn.textContent = "분석 실행하기";
+        } catch (e) {
+            runBtn.textContent = "연결 오류";
+        }
+    }
+
+    function cosineSim(a, b) {
+        let dot = 0, nA = 0, nB = 0;
+        for (let i = 0; i < a.length; i++) {
+            dot += a[i] * b[i]; nA += a[i] * a[i]; nB += b[i] * b[i];
+        }
+        return dot / (Math.sqrt(nA) * Math.sqrt(nB));
+    }
+
+    runBtn.onclick = async () => {
+        const s1 = document.getElementById('sent1').value;
+        const s2 = document.getElementById('sent2').value;
+        
+        runBtn.disabled = true;
+        runBtn.textContent = "분석 중...";
+
+        const out1 = await extractor(s1, { pooling: 'mean', normalize: true });
+        const out2 = await extractor(s2, { pooling: 'mean', normalize: true });
+        
+        const sim = cosineSim(out1.data, out2.data);
+        const score = (sim * 100).toFixed(1);
+
+        // 결과 표시
+        document.getElementById('resultSection').style.display = 'block';
+        document.getElementById('scoreNum').textContent = score + "%";
+        document.getElementById('progressBar').style.width = score + "%";
+
+        const statusTag = document.getElementById('statusTag');
+        const descText = document.getElementById('descText');
+
+        if (sim < 0.5) {
+            statusTag.style.color = "#f87171";
+            statusTag.textContent = "⚠️ 다른 문맥 (Different Context)";
+            descText.textContent = "단어는 비슷할 수 있으나, 인공지능이 판단하기에 두 문장의 실제 의미와 상황은 서로 다릅니다.";
+        } else {
+            statusTag.style.color = "var(--green)";
+            statusTag.textContent = "✅ 유사한 문맥 (Similar Context)";
+            descText.textContent = "두 문장은 핵심적인 의미가 서로 통하며, 아주 비슷한 상황이나 주제를 다루고 있습니다.";
+        }
+
+        runBtn.disabled = false;
+        runBtn.textContent = "분석 실행하기";
+    };
+
+    init();
+</script>
+</body>
+</html>
