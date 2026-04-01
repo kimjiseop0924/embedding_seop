@@ -1,88 +1,23 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>AI | Deep Context Decoder</title>
-    <style>
-        :root { --bg: #050507; --accent: #7c6aef; --text: #ffffff; --card: #131318; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 40px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 800px; width: 100%; }
-        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 1.1rem; }
-        .btn { width: 100%; padding: 18px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        
-        /* 실시간 분석창 */
-        .analysis-display { margin-top: 30px; display: none; animation: fadeIn 0.6s; }
-        .meaning-chip { display: inline-block; padding: 6px 12px; background: var(--accent); border-radius: 20px; font-size: 0.8rem; margin-bottom: 10px; }
-        .description-box { background: #1a1a24; padding: 25px; border-radius: 15px; border-left: 6px solid var(--accent); line-height: 1.7; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <header style="text-align:center; margin-bottom:40px;">
-        <h1 style="color:var(--accent); margin:0;">Deep Semantic Analyzer</h1>
-        <p style="color:#94a3b8;">사전 데이터 없이도 문맥의 '의미'를 스스로 해석합니다</p>
-    </header>
-
-    <div class="glass-card">
-        <input type="text" id="userInput" placeholder="분석하고 싶은 다의어 문장을 자유롭게 입력하세요">
-        <button id="runBtn" class="btn" disabled>AI 심층 신경망 로딩 중...</button>
-    </div>
-
-    <div id="analysisArea" class="analysis-display">
-        <div class="meaning-chip">AI 문맥 해석 (Semantic Interpretation)</div>
-        <div class="description-box">
-            <h2 id="summaryTitle" style="margin-top:0; color:var(--accent);">문맥 분석 결과</h2>
-            <p id="aiLogicText" style="font-size: 1.05rem;">문장을 입력하면 AI가 의미를 추출합니다.</p>
-            <div style="margin-top:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px; font-size:0.9rem; color:#94a3b8;">
-                <strong>💡 AI의 판단 근거:</strong> <span id="reasoning"></span>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script type="module">
     import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
-    let classifier;
-    const runBtn = document.getElementById('runBtn');
-
+    let pipe;
     async function init() {
-        // [핵심] 자연어 추론(NLI) 모델을 사용하여 문장의 의도를 파악합니다.
-        // 이 모델은 학습되지 않은 문장도 논리적으로 해석할 수 있습니다.
-        classifier = await pipeline('zero-shot-classification', 'Xenova/nli-deberta-v3-small');
+        // 이번에는 문장을 설명(Summarization)하거나 
+        // 문맥을 분석하는 모델을 로드합니다.
+        pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
         runBtn.disabled = false;
-        runBtn.textContent = "문장 의미 해석하기";
+        runBtn.textContent = "딥러닝 문맥 분석 시작";
     }
 
     runBtn.onclick = async () => {
         const text = document.getElementById('userInput').value;
-        if(!text) return;
-
-        runBtn.disabled = true;
-        runBtn.textContent = "AI가 문맥의 깊은 뜻을 읽는 중...";
-
-        // 우리가 궁금한 다의어 후보군을 '레이블'로 던져줍니다.
-        const candidateLabels = ['음식이나 과일', '물 위를 떠다니는 배', '사람의 몸이나 배탈', '내리는 눈이나 날씨', '보는 눈이나 시력'];
+        // 1. 문장을 벡터(숫자 덩어리)로 변환
+        const output = await pipe(text, { pooling: 'mean', normalize: true });
         
-        const result = await classifier(text, candidateLabels);
-
-        // 결과 표시
-        document.getElementById('analysisArea').style.display = 'block';
-        const topResult = result.labels[0];
-        const confidence = (result.scores[0] * 100).toFixed(1);
-
-        document.getElementById('summaryTitle').textContent = `분석 결과: [${topResult}]`;
-        document.getElementById('aiLogicText').innerHTML = `이 문장에서 사용된 단어는 <b>"${topResult}"</b>와 관련된 의미로 해석됩니다. AI는 이 해석이 맞을 확률을 <b>${confidence}%</b>로 판단하고 있습니다.`;
-        document.getElementById('reasoning').textContent = `입력하신 문장의 전체적인 단어 배치와 흐름이 '${topResult}'라는 개념과 가장 논리적으로 가깝게 연결되어 있습니다.`;
-
-        runBtn.disabled = false;
-        runBtn.textContent = "문장 의미 해석하기";
+        // 2. 이 숫자 덩어리를 통해 AI가 '어떤 세상'의 이야기인지 분류
+        // (이 과정이 딥러닝이 문맥을 이해하는 핵심 과정입니다!)
+        
+        // 결과창에 AI가 이 문장을 어떻게 '느끼고' 있는지 상세히 보여주도록 수정해보세요.
     };
-
-    init();
 </script>
-</body>
-</html>
