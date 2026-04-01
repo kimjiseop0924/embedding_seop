@@ -2,110 +2,69 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>JISEOP AI Lab | Context Analyzer</title>
+    <title>JISEOP AI | Context Relation Analyzer</title>
     <style>
         :root {
-            --bg: #050507;
-            --card-bg: #0f111a;
-            --accent: #7c6aef;
-            --accent-glow: rgba(124, 106, 239, 0.3);
-            --text-main: #ffffff;
-            --text-dim: #94a3b8;
-            --green: #10b981;
-            --border: #1e293b;
+            --bg: #050507; --card: #0f111a; --accent: #7c6aef;
+            --text: #ffffff; --dim: #94a3b8; --green: #10b981; --red: #f87171;
         }
-
-        body {
-            background-color: var(--bg);
-            color: var(--text-main);
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
-            margin: 0;
-        }
-
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 700px; width: 100%; }
-
-        /* 헤더 디자인 */
-        header { text-align: center; margin-bottom: 40px; }
-        .logo { font-size: 0.9rem; color: var(--accent); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-        h1 { font-size: 2.5rem; font-weight: 800; margin: 0; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* 입력창 디자인 */
-        .glass-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            margin-bottom: 24px;
-        }
-
-        .input-wrapper { margin-bottom: 20px; }
-        label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; margin-left: 4px; }
-        input {
-            width: 100%; background: #050507; border: 1px solid var(--border);
-            border-radius: 12px; padding: 14px 18px; color: white; font-size: 1rem;
-            transition: all 0.3s; box-sizing: border-box;
-        }
-        input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
-
-        /* 버튼 디자인 */
-        .btn-primary {
-            width: 100%; padding: 16px; background: var(--accent); color: white;
-            border: none; border-radius: 12px; font-weight: 700; font-size: 1rem;
-            cursor: pointer; transition: all 0.3s;
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px var(--accent-glow); }
-        .btn-primary:disabled { background: #2d2d3d; color: #666; cursor: not-allowed; }
-
-        /* 결과 그래프 및 분석 창 */
-        .result-section { display: none; animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .score-card {
-            background: rgba(124, 106, 239, 0.05); border: 1px solid var(--accent);
-            border-radius: 20px; padding: 25px; text-align: center; margin-bottom: 20px;
-        }
-        .score-num { font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1; margin: 10px 0; }
         
-        .progress-container { width: 100%; height: 12px; background: #1e1e26; border-radius: 6px; overflow: hidden; margin: 20px 0; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #a78bfa); transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        /* 입력 섹션 */
+        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 25px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn:hover:not(:disabled) { background: #6a59d1; transform: translateY(-2px); }
 
-        .analysis-text { background: #161b22; padding: 20px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; border: 1px solid #30363d; }
+        /* 결과 섹션 */
+        .result-area { display: none; animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .relation-card { background: #161b22; border-radius: 20px; padding: 25px; border: 1px solid #30363d; margin-bottom: 20px; text-align: center; }
+        .score-display { font-size: 3rem; font-weight: 800; color: var(--accent); margin: 10px 0; }
+        
+        /* 관계도 그래프 */
+        .graph-container { width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden; margin: 20px 0; }
+        .graph-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #a78bfa); transition: width 1s cubic-bezier(0.1, 0.5, 0.1, 1); }
+
+        /* 의미 상세 분석 */
+        .meaning-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .meaning-item { background: #0f111a; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; }
+        .tag { font-size: 0.7rem; color: var(--accent); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <header>
-        <div class="logo">Artificial Intelligence</div>
-        <h1>Context Analyzer</h1>
+    <header style="text-align:center; margin-bottom:40px;">
+        <h1 style="font-size: 2.2rem; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI 문맥 관계도 분석</h1>
+        <p style="color:var(--dim); font-size: 0.9rem; margin-top: 5px;">다의어의 정확한 의미와 문장 간의 거리를 측정합니다</p>
     </header>
 
     <div class="glass-card">
-        <div class="input-wrapper">
-            <label>Sentence 01</label>
-            <input type="text" id="sent1" value="맛있는 배를 먹으니 기분이 좋아">
-        </div>
-        <div class="input-wrapper">
-            <label>Sentence 02</label>
-            <input type="text" id="sent2" value="배를 타고 푸른 바다를 건너가">
-        </div>
-        <button id="runBtn" class="btn-primary" disabled>로딩 중...</button>
+        <input type="text" id="sent1" value="맛있는 배를 깎아서 먹었다">
+        <input type="text" id="sent2" value="배가 아파서 병원에 갔다">
+        <button id="runBtn" class="btn" disabled>AI 모델 로딩 중...</button>
     </div>
 
-    <div id="resultSection" class="result-section">
-        <div class="score-card">
-            <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-dim);">의미 관계도 (Similarity)</div>
-            <div id="scoreNum" class="score-num">0%</div>
-            <div class="progress-container"><div id="progressBar" class="progress-bar"></div></div>
+    <div id="resultArea" class="result-area">
+        <div class="relation-card">
+            <span style="color: var(--dim); font-size: 0.9rem; font-weight: 600;">문맥 관계도 (Semantic Relation)</span>
+            <div id="scoreText" class="score-display">0%</div>
+            <div class="graph-container"><div id="graphFill" class="graph-fill"></div></div>
+            <p id="verdict" style="font-weight: bold; margin-top: 10px;"></p>
         </div>
 
-        <div class="analysis-text">
-            <div id="statusTag" style="font-weight: 700; margin-bottom: 8px;">분석 완료</div>
-            <div id="descText" style="color: var(--text-dim);">문장을 입력하고 분석 버튼을 눌러주세요.</div>
+        <div class="meaning-box">
+            <div class="meaning-item">
+                <span class="tag">Sentence 1 Meaning</span>
+                <div id="sense1" style="font-size: 0.95rem;">의미 분석 중...</div>
+            </div>
+            <div class="meaning-item">
+                <span class="tag">Sentence 2 Meaning</span>
+                <div id="sense2" style="font-size: 0.95rem;">의미 분석 중...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -117,21 +76,28 @@
     const runBtn = document.getElementById('runBtn');
 
     async function init() {
-        try {
-            extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-            runBtn.disabled = false;
-            runBtn.textContent = "분석 실행하기";
-        } catch (e) {
-            runBtn.textContent = "연결 오류";
-        }
+        // 문맥 파악에 특화된 다국어 모델 로드
+        extractor = await pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2');
+        runBtn.disabled = false;
+        runBtn.textContent = "관계도 분석 실행";
     }
 
     function cosineSim(a, b) {
         let dot = 0, nA = 0, nB = 0;
-        for (let i = 0; i < a.length; i++) {
-            dot += a[i] * b[i]; nA += a[i] * a[i]; nB += b[i] * b[i];
-        }
+        for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; nA += a[i] * a[i]; nB += b[i] * b[i]; }
         return dot / (Math.sqrt(nA) * Math.sqrt(nB));
+    }
+
+    // 단어 주변의 힌트를 찾아 의미를 결정하는 함수
+    function analyzeSense(text) {
+        const food = ["먹", "맛", "깎", "과일", "후식", "달콤", "즙"];
+        const ship = ["타", "항구", "바다", "배 위", "선원", "돛", "갑판"];
+        const body = ["아프", "배탈", "복통", "부르", "홀쭉", "병원", "신체"];
+
+        if (food.some(word => text.includes(word))) return "🍎 <b>먹는 과일</b> (음식)";
+        if (ship.some(word => text.includes(word))) return "🚢 <b>운송 수단</b> (선박)";
+        if (body.some(word => text.includes(word))) return "🧍 <b>사람의 몸</b> (신체 부위)";
+        return "❓ <b>기타 문맥</b>";
     }
 
     runBtn.onclick = async () => {
@@ -139,7 +105,7 @@
         const s2 = document.getElementById('sent2').value;
         
         runBtn.disabled = true;
-        runBtn.textContent = "분석 중...";
+        runBtn.textContent = "AI 분석 중...";
 
         const out1 = await extractor(s1, { pooling: 'mean', normalize: true });
         const out2 = await extractor(s2, { pooling: 'mean', normalize: true });
@@ -147,26 +113,29 @@
         const sim = cosineSim(out1.data, out2.data);
         const score = (sim * 100).toFixed(1);
 
-        // 결과 표시
-        document.getElementById('resultSection').style.display = 'block';
-        document.getElementById('scoreNum').textContent = score + "%";
-        document.getElementById('progressBar').style.width = score + "%";
+        // 결과 표시 업데이트
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('scoreText').textContent = score + "%";
+        document.getElementById('graphFill').style.width = score + "%";
+        
+        // 의미 분석 결과 업데이트
+        document.getElementById('sense1').innerHTML = analyzeSense(s1);
+        document.getElementById('sense2').innerHTML = analyzeSense(s2);
 
-        const statusTag = document.getElementById('statusTag');
-        const descText = document.getElementById('descText');
-
-        if (sim < 0.5) {
-            statusTag.style.color = "#f87171";
-            statusTag.textContent = "⚠️ 다른 문맥 (Different Context)";
-            descText.textContent = "단어는 비슷할 수 있으나, 인공지능이 판단하기에 두 문장의 실제 의미와 상황은 서로 다릅니다.";
+        const verdict = document.getElementById('verdict');
+        if (sim < 0.45) {
+            verdict.textContent = "서로 다른 의미로 사용되었습니다.";
+            verdict.style.color = "var(--red)";
+        } else if (sim < 0.75) {
+            verdict.textContent = "문맥상 연관성이 보통입니다.";
+            verdict.style.color = "var(--accent)";
         } else {
-            statusTag.style.color = "var(--green)";
-            statusTag.textContent = "✅ 유사한 문맥 (Similar Context)";
-            descText.textContent = "두 문장은 핵심적인 의미가 서로 통하며, 아주 비슷한 상황이나 주제를 다루고 있습니다.";
+            verdict.textContent = "같은 의미로 사용된 문맥입니다.";
+            verdict.style.color = "var(--green)";
         }
 
         runBtn.disabled = false;
-        runBtn.textContent = "분석 실행하기";
+        runBtn.textContent = "관계도 분석 실행";
     };
 
     init();
