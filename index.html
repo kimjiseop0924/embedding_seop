@@ -2,95 +2,83 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>JISEOP AI | 사전 기반 문맥 분석기</title>
+    <title>AI | 문맥 의미 판독기</title>
     <style>
         :root {
-            --bg: #0a0a0c; --card: #131318; --accent: #7c6aef;
-            --text: #e8e6f0; --dim: #94a3b8; --green: #50d080; --red: #f87171;
+            --bg: #050507; --card: #0f111a; --accent: #7c6aef;
+            --text: #ffffff; --dim: #94a3b8; --green: #10b981; --red: #f87171;
         }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 30px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 750px; width: 100%; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 700px; width: 100%; }
         
-        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 25px; border-radius: 20px; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .glass-card { background: var(--card); border: 1px solid #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 25px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; background: #000; border: 1px solid #333; color: #fff; border-radius: 10px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        /* 결과창 디자인 */
-        .result-area { display: none; margin-top: 20px; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* 의미 판독 결과창 */
+        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; display: none; }
+        .analysis-card { background: #161b22; padding: 20px; border-radius: 15px; border-left: 5px solid var(--accent); }
+        .label { font-size: 0.75rem; color: var(--accent); font-weight: bold; margin-bottom: 5px; }
+        .meaning-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
+        .meaning-desc { font-size: 0.9rem; color: var(--dim); line-height: 1.5; }
 
-        .meaning-card { background: #1c1c24; padding: 20px; border-radius: 15px; border-left: 5px solid var(--accent); margin-bottom: 15px; }
-        .dic-title { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-bottom: 5px; }
-        .dic-def { font-size: 1rem; line-height: 1.5; color: var(--text); }
-
-        .relation-score { text-align: center; padding: 20px; background: #131318; border-radius: 15px; border: 1px solid #333; }
+        .score-box { margin-top: 20px; text-align: center; background: #161b22; padding: 25px; border-radius: 20px; display: none; }
         .bar-bg { width: 100%; height: 10px; background: #333; border-radius: 5px; margin: 15px 0; overflow: hidden; }
-        .bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 1s; }
+        .bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 1s ease-in-out; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <header style="text-align:center; margin-bottom:30px;">
-        <h1 style="color:var(--accent);">AI Dictionary Context</h1>
-        <p style="color:var(--dim);">AI가 문장을 읽고 사전적 의미를 찾아냅니다</p>
+        <h1 style="color:var(--accent);">AI Context Decoder</h1>
+        <p style="color:var(--dim);">단어가 어떤 의미로 쓰였는지 AI가 판독합니다</p>
     </header>
 
     <div class="glass-card">
-        <input type="text" id="sent1" value="시원한 배를 깎아서 후식으로 맛있게 먹었다">
-        <input type="text" id="sent2" value="배가 너무 아파서 근처 병원에 다녀왔다">
-        <button id="runBtn" class="btn" disabled>AI 모델 로딩 중...</button>
+        <input type="text" id="sent1" value="배가 고파서 사과와 배를 먹었다">
+        <input type="text" id="sent2" value="배를 타고 푸른 바다를 여행했다">
+        <button id="runBtn" class="btn" disabled>AI 로딩 중...</button>
     </div>
 
-    <div id="resultArea" class="result-area">
-        <div class="meaning-card">
-            <div class="dic-title">SENTENCE 1: AI 사전적 의미 판독</div>
-            <div id="def1" class="dic-def">분석 중...</div>
+    <div id="analysisGrid" class="analysis-grid">
+        <div class="analysis-card">
+            <div class="label">문장 1 문맥 판독</div>
+            <div id="word1" class="meaning-title">--</div>
+            <div id="desc1" class="meaning-desc">--</div>
         </div>
+        <div class="analysis-card">
+            <div class="label">문장 2 문맥 판독</div>
+            <div id="word2" class="meaning-title">--</div>
+            <div id="desc2" class="meaning-desc">--</div>
+        </div>
+    </div>
 
-        <div class="meaning-card">
-            <div class="dic-title">SENTENCE 2: AI 사전적 의미 판독</div>
-            <div id="def2" class="dic-def">분석 중...</div>
-        </div>
-
-        <div class="relation-score">
-            <div style="font-size: 0.9rem; color: var(--dim);">문맥 관계도 점수</div>
-            <div id="scoreValue" style="font-size: 3rem; font-weight: 800; color: var(--accent);">0%</div>
-            <div class="bar-bg"><div id="barFill" class="bar-fill"></div></div>
-            <p id="verdictText" style="font-weight:bold;"></p>
-        </div>
+    <div id="scoreBox" class="score-box">
+        <div style="font-size:0.9rem; color:var(--dim);">문맥 관계도 (Similarity)</div>
+        <div id="scoreNum" style="font-size:3rem; font-weight:800; color:var(--accent);">0%</div>
+        <div class="bar-bg"><div id="barFill" class="bar-fill"></div></div>
+        <p id="verdict" style="font-weight:bold;"></p>
     </div>
 </div>
 
 <script type="module">
     import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
+    // AI가 참조할 사전 지식 데이터
+    const DICTIONARY = {
+        "과일": { name: "배 (과일)", desc: "먹을 수 있는 배나무의 열매입니다.", keywords: ["먹", "맛", "깎", "즙", "과일", "식사", "사과"] },
+        "선박": { name: "배 (선박)", desc: "물 위로 떠다니는 이동 수단입니다.", keywords: ["타", "항구", "바다", "갑판", "여행", "파도", "선장"] },
+        "신체": { name: "배 (신체)", desc: "사람의 위와 장이 있는 몸의 부위입니다.", keywords: ["아프", "배탈", "복통", "부르", "홀쭉", "병원", "소화"] }
+    };
+
     let extractor;
     const runBtn = document.getElementById('runBtn');
-
-    // 사전 데이터 정의
-    const dictionaryData = [
-        { 
-            type: "과일 (Fruit)", 
-            definition: "🍎 <b>[명사]</b> 배나무의 열매. 수분이 많고 단맛이 나는 식용 과일입니다.",
-            triggers: ["먹", "맛", "깎", "즙", "과일", "후식", "달다", "단맛"]
-        },
-        { 
-            type: "선박 (Ship)", 
-            definition: "🚢 <b>[명사]</b> 사람이나 짐을 싣고 물 위로 떠다니는 이동 수단입니다.",
-            triggers: ["타", "항구", "바다", "갑판", "선장", "파도", "선박", "출항", "강"]
-        },
-        { 
-            type: "신체 (Body)", 
-            definition: "🧍 <b>[명사]</b> 사람이나 동물의 몸에서 위, 장 등이 들어 있는 부위입니다.",
-            triggers: ["아프", "배탈", "복통", "부르", "홀쭉", "배꼽", "병원", "만지", "소화"]
-        }
-    ];
 
     async function init() {
         extractor = await pipeline('feature-extraction', 'Xenova/paraphrase-multilingual-MiniLM-L12-v2');
         runBtn.disabled = false;
-        runBtn.textContent = "문맥 및 사전 의미 분석";
+        runBtn.textContent = "문맥 의미 분석 실행";
     }
 
     function cosineSim(a, b) {
@@ -99,11 +87,12 @@
         return dot / (Math.sqrt(nA) * Math.sqrt(nB));
     }
 
-    function findDictionaryDefinition(text) {
-        for (const item of dictionaryData) {
-            if (item.triggers.some(word => text.includes(word))) return item;
+    // 문맥을 읽어 사전 정의를 매칭하는 함수
+    function getContextMeaning(text) {
+        for (const key in DICTIONARY) {
+            if (DICTIONARY[key].keywords.some(k => text.includes(k))) return DICTIONARY[key];
         }
-        return { type: "기타", definition: "❓ 문맥상 특정한 사전적 정의를 찾기 어렵습니다." };
+        return { name: "일반 문맥", desc: "특정한 다의어 의미가 발견되지 않았습니다." };
     }
 
     runBtn.onclick = async () => {
@@ -111,34 +100,42 @@
         const s2 = document.getElementById('sent2').value;
         runBtn.disabled = true;
 
-        const out1 = await extractor(s1, { pooling: 'mean', normalize: true });
-        const out2 = await extractor(s2, { pooling: 'mean', normalize: true });
+        const [out1, out2] = await Promise.all([
+            extractor(s1, { pooling: 'mean', normalize: true }),
+            extractor(s2, { pooling: 'mean', normalize: true })
+        ]);
+
+        const meaning1 = getContextMeaning(s1);
+        const meaning2 = getContextMeaning(s2);
         
         let sim = cosineSim(out1.data, out2.data);
         
-        const res1 = findDictionaryDefinition(s1);
-        const res2 = findDictionaryDefinition(s2);
-
-        // 의미가 다르면 AI 관계도 점수를 보정하여 정확하게 표시
-        if (res1.type !== res2.type && res1.type !== "기타" && res2.type !== "기타") {
-            sim = sim * 0.3; 
+        // 의미 판독 결과가 다르면 관계도를 강제로 낮춤 (정확도 보정)
+        if (meaning1.name !== meaning2.name && meaning1.name !== "일반 문맥" && meaning2.name !== "일반 문맥") {
+            sim = sim * 0.3;
         }
 
-        const score = (sim * 100).toFixed(1);
+        document.getElementById('analysisGrid').style.display = 'grid';
+        document.getElementById('scoreBox').style.display = 'block';
 
-        document.getElementById('resultArea').style.display = 'block';
-        document.getElementById('def1').innerHTML = res1.definition;
-        document.getElementById('def2').innerHTML = res2.definition;
-        document.getElementById('scoreValue').textContent = score + "%";
+        document.getElementById('word1').textContent = meaning1.name;
+        document.getElementById('desc1').textContent = meaning1.desc;
+        document.getElementById('word2').textContent = meaning2.name;
+        document.getElementById('desc2').textContent = meaning2.desc;
+
+        const score = (sim * 100).toFixed(1);
+        document.getElementById('scoreNum').textContent = score + "%";
         document.getElementById('barFill').style.width = score + "%";
 
-        const vText = document.getElementById('verdictText');
+        const verdict = document.getElementById('verdict');
         if (sim < 0.4) {
-            vText.textContent = "결과: 두 문장은 '다의어'의 의미가 서로 달라 관계도가 낮습니다.";
-            vText.style.color = "var(--red)";
+            verdict.textContent = "AI 판독: 두 단어는 서로 다른 의미로 쓰였습니다.";
+            verdict.style.color = "var(--red)";
+            document.getElementById('barFill').style.background = "var(--red)";
         } else {
-            vText.textContent = "결과: 두 문장은 비슷한 사전적 문맥을 공유하고 있습니다.";
-            vText.style.color = "var(--green)";
+            verdict.textContent = "AI 판독: 문맥상 의미가 비슷하거나 동일합니다.";
+            verdict.style.color = "var(--green)";
+            document.getElementById('barFill').style.background = "var(--accent)";
         }
 
         runBtn.disabled = false;
