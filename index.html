@@ -2,29 +2,32 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>AI 문맥 & 관계도 분석기</title>
+    <title>지섭의 AI 문맥 분석기</title>
     <style>
-        :root { --bg: #0a0a0c; --surface: #131318; --accent: #7c6aef; --text: #e8e6f0; --green: #50d080; --red: #f87171; }
-        body { background: var(--bg); color: var(--text); font-family: 'Malgun Gothic', sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 800px; width: 100%; }
-        header { text-align: center; margin-bottom: 2rem; }
+        :root { --bg: #0a0a0c; --surface: #131318; --accent: #7c6aef; --text: #e8e6f0; --green: #50d080; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 600px; width: 100%; }
+        #loadingContainer { width: 100%; background: #1e1e26; height: 10px; border-radius: 5px; margin: 20px 0; display: block; overflow: hidden; }
+        #loadingBar { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
         
         .input-group { background: var(--surface); padding: 20px; border-radius: 15px; border: 1px solid #1e1e26; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #0a0a0c; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* 관계도 그래프 영역 */
-        .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .model-card { background: var(--surface); border: 1px solid #1e1e26; padding: 15px; border-radius: 12px; }
-        .score-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .bar-bg { flex: 1; height: 8px; background: #1e1e26; border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.8s ease-out; }
+        .btn:disabled { background: #333; cursor: not-allowed; }
 
-        /* 의미 분석 결과창 */
-        .analysis-box { margin-top: 25px; padding: 20px; background: #1e1e26; border-radius: 15px; border-left: 5px solid var(--accent); display: none; }
-        .highlight { color: var(--accent); font-weight: bold; }
+        .model-card { background: var(--surface); border: 1px solid #1e1e26; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .bar-bg { width: 100%; height: 8px; background: #1e1e26; border-radius: 4px; margin-top: 10px; }
+        .bar-fill { height: 100%; width: 0%; background: var(--green); transition: width 0.8s; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <h2>AI 문맥 & 관계도 분석</h2>
+    
+    <div id="loadingStatus">인공지능 모델을 내려받는 중입니다... (약 30초 소요)</div>
+    <div id="loadingContainer"><div id="loadingBar"></div></div>
+
+    <div class="input-group">
+        <input type="text" id="sent1" value="배가 고파서 사과를 먹었다">
+        <input type="text" id="sent2" value="배를 타고 바다를 건너갔다">
