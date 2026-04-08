@@ -2,78 +2,80 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>JISEOP AI | 정밀 문맥 판독기</title>
+    <title>Sentence Distance Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg: #050507; --accent: #7c6aef; --text: #ffffff; --card: #131318; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 600px; width: 100%; }
-        .glass-card { background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid #333; }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: #fff; border-radius: 8px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .status { margin-top: 10px; font-size: 0.85rem; color: #94a3b8; text-align: center; }
-        
-        /* 결과 영역 */
-        .result-box { margin-top: 20px; padding: 20px; background: #1a1a24; border-radius: 12px; border-left: 4px solid var(--accent); display: none; }
-        .label { color: var(--accent); font-weight: bold; font-size: 0.9rem; }
+        :root { --bg: #050507; --accent: #00d2ff; --card: #111; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 800px; width: 100%; }
+        .input-box { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; background: #000; border: 1px solid #333; color: white; border-radius: 5px; }
+        .btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; }
+        .chart-card { background: var(--card); padding: 20px; border-radius: 15px; margin-top: 20px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center;">🧠 AI 문맥 스스로 해석하기</h2>
-    <div class="glass-card">
-        <input type="text" id="userInput" placeholder="문장을 입력하세요 (예: 배가 너무 불러요)">
-        <button id="runBtn" disabled>모델 준비 중...</button>
-        <div id="loadingMsg" class="status">인공지능 뇌를 연결하는 중입니다 (최대 1분 소요)...</div>
+    <h2>📏 유클리드 거리(Euclidean) 분석</h2>
+    <div class="input-box">
+        <input type="text" id="s1" value="배가 바다를 건너간다">
+        <input type="text" id="s2" value="커다란 선박이 항해를 한다">
+        <button id="runBtn" class="btn" disabled>모델 로딩 중...</button>
     </div>
 
-    <div id="resultBox" class="result-box">
-        <div class="label">AI 분석 결과</div>
-        <p id="aiText" style="line-height:1.6; margin-top:10px;"></p>
-        <div style="font-size:0.8rem; color:#666;">* 이 결과는 사전 정의 없이 AI가 문맥만으로 추론한 것입니다.</div>
+    <div class="chart-card">
+        <h4 id="distanceText">거리를 계산해 보세요</h4>
+        <canvas id="barChart"></canvas>
     </div>
 </div>
 
 <script type="module">
     import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
 
-    let classifier;
-    const btn = document.getElementById('runBtn');
-    const msg = document.getElementById('loadingMsg');
+    let extractor;
+    let barChart;
 
-    // 1. 모델 로딩 (가장 중요한 단계!)
     async function init() {
-        try {
-            classifier = await pipeline('zero-shot-classification', 'Xenova/nli-deberta-v3-small');
-            btn.disabled = false;
-            btn.textContent = "문맥 분석 시작";
-            msg.textContent = "✅ 준비 완료! 문장을 입력하고 버튼을 누르세요.";
-        } catch (e) {
-            msg.textContent = "❌ 로딩 실패. 인터넷 연결을 확인하고 새로고침해 주세요.";
-        }
+        extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+        document.getElementById('runBtn').disabled = false;
+        document.getElementById('runBtn').textContent = "유클리드 거리 측정";
     }
 
-    btn.onclick = async () => {
-        const text = document.getElementById('userInput').value;
-        if (!text) return;
+    // 유클리드 거리 계산 함수 (직선 거리)
+    function euclideanDistance(a, b) {
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) {
+            sum += Math.pow(a[i] - b[i], 2);
+        }
+        return Math.sqrt(sum);
+    }
 
-        btn.disabled = true;
-        btn.textContent = "AI가 생각하는 중...";
-        
-        // AI가 선택할 수 있는 '의미 카테고리'입니다.
-        const labels = ['먹는 과일', '물 위를 다니는 배', '몸의 부위(배탈)', '하늘에서 내리는 눈', '보는 눈(시력)'];
-        
-        const result = await classifier(text, labels);
+    document.getElementById('runBtn').onclick = async () => {
+        const out1 = await extractor(document.getElementById('s1').value, { pooling: 'mean', normalize: false });
+        const out2 = await extractor(document.getElementById('s2').value, { pooling: 'mean', normalize: false });
 
-        document.getElementById('resultBox').style.display = 'block';
-        document.getElementById('aiText').innerHTML = `
-            입력한 문장은 <b>[${result.labels[0]}]</b> 의미일 확률이 가장 높습니다.<br>
-            (확률: ${(result.scores[0] * 100).toFixed(1)}%)
-        `;
+        const dist = euclideanDistance(out1.data, out2.data).toFixed(2);
+        document.getElementById('distanceText').textContent = `두 문장의 거리: ${dist} (0에 가까울수록 유사함)`;
 
-        btn.disabled = false;
-        btn.textContent = "문맥 분석 시작";
+        updateChart(dist);
     };
+
+    function updateChart(dist) {
+        if (barChart) barChart.destroy();
+        barChart = new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: ['문장 간 거리'],
+                datasets: [{
+                    label: 'Euclidean Distance',
+                    data: [dist],
+                    backgroundColor: '#00d2ff'
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 20 } } }
+        });
+    }
 
     init();
 </script>
